@@ -60,12 +60,19 @@ attr_reader :board
   def move_piece(start_pos, end_pos)
     #gets input from player
 
-    if self[start_pos].nil?
+    if self[start_pos] == NullPiece.instance
       raise RuntimeError.new("No piece at starting position")
     end
 
     #raise error if piece can't move to end_pos
-    self[start_pos], self[end_pos] = self[end_pos], self[start_pos]
+    if self[end_pos] == NullPiece.instance
+      self[start_pos], self[end_pos] = self[end_pos], self[start_pos]
+      self[end_pos].pos = end_pos
+    else
+      self[end_pos] = self[start_pos]
+      self[start_pos] = NullPiece.instance
+      self[end_pos].pos = end_pos
+    end
     rescue
       retry
   end

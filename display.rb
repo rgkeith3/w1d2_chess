@@ -48,5 +48,5 @@ class Display
   end
 end
 
-display = Display.new(Board.new)
-display.navigate
+# display = Display.new(Board.new)
+# display.navigate
