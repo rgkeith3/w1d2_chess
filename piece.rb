@@ -47,7 +47,7 @@ module SlidingPiece
   end
 
   def moves_in_dir(dir)
-
+    
   end
 
 end
