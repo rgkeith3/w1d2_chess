@@ -73,8 +73,57 @@ attr_reader :board
       self[start_pos] = NullPiece.instance
       self[end_pos].pos = end_pos
     end
+    self[end_pos].first_move = false if self[end_pos].is_a?(Pawn)
     rescue
       retry
+  end
+
+  def moves_into_check?(start_pos, end_pos)
+    color = self[start_pos].color
+    piece = self[end_pos]
+    self[end_pos] = self[start_pos]
+    self[start_pos] = NullPiece.instance
+    check = in_check?(color)
+    self[start_pos] = self[end_pos]
+    self[end_pos] = piece
+    check
+  end
+
+  def in_check?(color)
+    poss_moves = []
+    king_pos = []
+    @board.each_with_index do |row, id1|
+      row.each_with_index do |square, id2|
+        unless square.is_a?(NullPiece)
+          if square.color != color
+            poss_moves.concat(square.moves)
+          elsif square.is_a?(King) && square.color == color
+            king_pos = [id1, id2]
+          end
+        end
+      end
+    end
+    poss_moves.include?(king_pos)
+  end
+
+  def checkmate?(color)
+    in_check?(color) && pieces_on_board(color).all? do |piece|
+      piece.valid_moves.empty?
+    end
+  end
+
+  def pieces_on_board(color)
+    pieces = []
+    @board.each_with_index do |row, id1|
+      row.each_with_index do |square, id2|
+        unless square.is_a?(NullPiece)
+          if square.color == color
+            pieces << square
+          end
+        end
+      end
+    end
+    pieces
   end
 
   def in_bounds?(pos)

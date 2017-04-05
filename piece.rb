@@ -13,7 +13,12 @@ class Piece
     @color = color
   end
 
-  def moves
+  def valid_moves
+    valid_moves = []
+    moves.each do |move|
+      valid_moves << move unless @board.moves_into_check?(@pos, move)
+    end
+    valid_moves
   end
 
 end
@@ -36,17 +41,6 @@ MOVES = {
   ne: [-1, 1],
   sw: [1, -1],
   se: [1, 1]
-}
-
-KNIGHT_MOVES = {
-  [[2, 1],
-  [-2, 1],
-  [-2, -1],
-  [2, -1],
-  [1, 2],
-  [1, -2],
-  [-1, 2],
-  [-1, -2]]
 }
 
 module SlidingPiece
@@ -88,7 +82,9 @@ module SteppingPiece
     poss_moves = []
     move_dirs.each do |dir|
       next_pos = next_move(@pos, dir)
-      poss_moves << next_pos if @board.in_bounds?(next_pos)
+      if @board.in_bounds?(next_pos) && @board[next_pos].color != @color
+        poss_moves << next_pos
+      end
     end
     poss_moves
   end
@@ -128,10 +124,7 @@ class Bishop < Piece
   def initialize(pos, board, color)
     @symbol = :b
     super
-  end
-
-  def move_dirs
-    [:ne, :nw, :se, :sw]
+    @move_dirs = [:ne, :nw, :se, :sw]
   end
 end
 
@@ -147,14 +140,16 @@ end
 
 class Knight < Piece
 
-  @knight_moves = [[2, 1],
-  [-2, 1],
-  [-2, -1],
-  [2, -1],
-  [1, 2],
-  [1, -2],
-  [-1, 2],
-  [-1, -2]]
+  KNIGHT_MOVES = [
+    [2, 1],
+    [-2, 1],
+    [-2, -1],
+    [2, -1],
+    [1, 2],
+    [1, -2],
+    [-1, 2],
+    [-1, -2]
+  ]
 
   def initialize(pos, board, color)
     @symbol = :k
@@ -163,28 +158,66 @@ class Knight < Piece
 
   def moves
     poss_moves = []
-    @knight_moves.each do |move|
+    KNIGHT_MOVES.each do |move|
       next_pos = next_move(@pos, move)
-      poss_moves << next_pos if @board.in_bounds?(next_pos)
+      poss_moves << next_pos if valid_knight_move?(next_pos)
     end
+    poss_moves
   end
 
+  def next_move(pos, move)
+    [pos[0] + move[0], pos[1] + move[1]]
+  end
 
-    def next_move(pos, move)
-      [pos[0] + move[0], pos[1] + move[1]]
-    end
+  def valid_knight_move?(next_pos)
+    @board.in_bounds?(next_pos) && @board[next_pos].color != @color
+  end
 
 end
 
 class Pawn < Piece
-  include SteppingPiece
+  attr_accessor :first_move
 
   def initialize(pos, board, color)
     @symbol = :p
+    @first_move = true
     super
   end
 
-  def move_dirs
 
+
+  def moves
+    poss_moves = []
+    if @color == :black
+      poss_moves << next_move(@pos, [1, 0]) if @board[next_move(@pos, [1,0])] == NullPiece.instance
+      unless @board[next_move(@pos, [2,0])].color == :blue
+        poss_moves << next_move(@pos, [2, 0]) if @first_move
+      end
+      if @board.in_bounds?(next_move(@pos, [1, 1])) &&
+        @board[next_move(@pos, [1, 1])].color == :blue
+          poss_moves << next_move(@pos, [1, 1])
+      elsif @board.in_bounds?(next_move(@pos, [1, -1])) &&
+        @board[next_move(@pos, [1, -1])].color == :blue
+        poss_moves << next_move(@pos, [1, -1])
+      end
+    else
+      poss_moves << next_move(@pos, [-1, 0]) if @board[next_move(@pos, [1,0])] == NullPiece.instance
+      unless @board[next_move(@pos, [-2,0])].color == :black
+        poss_moves << next_move(@pos, [-2, 0]) if @first_move
+      end
+      if @board.in_bounds?(next_move(@pos, [-1, 1])) &&
+        @board[next_move(@pos, [-1, 1])].color == :black
+        poss_moves << next_move(@pos, [-1, 1])
+      elsif @board.in_bounds?(next_move(@pos, [-1, -1])) &&
+        @board[next_move(@pos, [-1, -1])].color == :black
+        poss_moves << next_move(@pos, [-1, -1])
+      end
+    end
+    poss_moves
   end
+
+  def next_move(pos, move)
+    [pos[0] + move[0], pos[1] + move[1]]
+  end
+
 end
